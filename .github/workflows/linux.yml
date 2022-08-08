@@ -47,7 +47,7 @@ jobs:
           mkdir export
           mv funkin.bin export
           mv funkin.cue export
-          rar a export.rar export
+          rar a PSXFunkinSimple.rar export
 
       - name: PSXFunkinSimple
         run: |
