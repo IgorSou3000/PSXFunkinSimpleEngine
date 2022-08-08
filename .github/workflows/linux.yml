@@ -43,6 +43,7 @@ jobs:
           sudo apt-get install libavformat-dev
           wget https://download1515.mediafire.com/yiskdz62pfzg/7zeyfstxyg66kn2/licensea.dat
           make -f Makefile.tools -j8
+          make -j8
           make -f Makefile.assets -j8
           mkpsxiso -y funkin.xml
 
