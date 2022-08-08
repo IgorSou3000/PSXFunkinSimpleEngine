@@ -45,7 +45,7 @@ jobs:
           unzip psyq-4_7-converted-light.zip
           mv psyq-4_7-converted mips/psyq
           make -j8
-          make -f makefile.tools -j8
+          make -f Makefile.tools -j8
           make -f Makefile.assets -j8
           mkpsxiso -y funkin.xml
           mkdir export
