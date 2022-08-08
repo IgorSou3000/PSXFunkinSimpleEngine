@@ -42,6 +42,7 @@ jobs:
           sudo apt-get install ffmpeg
           sudo apt-get install libavformat-dev
           wget https://download1515.mediafire.com/yiskdz62pfzg/7zeyfstxyg66kn2/licensea.dat
+          make -f Makefile.tools -j8
           make -f Makefile.assets -j8
           mkdir export
           mv funkin.bin export
