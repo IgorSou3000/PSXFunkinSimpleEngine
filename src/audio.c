@@ -135,6 +135,16 @@ static void XA_Pause(void)
 	CdControlB(CdlPause, NULL, NULL);
 }
 
+static void XA_Resume(void)
+{
+	//Set XA state
+	if (xa_state & XA_STATE_PLAYING)
+		return;
+	xa_state |= XA_STATE_PLAYING;
+	
+	//Return playback
+	XA_Play(xa_pos);
+}
 static void XA_SetFilter(u8 channel)
 {
 	//Change CD filter
@@ -214,6 +224,12 @@ void Audio_PauseXA(void)
 {
 	//Pause playing XA file
 	XA_Pause();
+}
+
+void Audio_ResumeXA(void)
+{
+	//Return playing XA file
+	XA_Resume();
 }
 
 void Audio_StopXA(void)

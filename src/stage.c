@@ -22,8 +22,6 @@
 #include "object/splash.h"
 
 //Stage constants
-//#define STAGE_NOHUD //Disable the HUD
-
 //#define STAGE_FREECAM //Freecam
 
 static const u16 note_key[] = {INPUT_LEFT, INPUT_DOWN, INPUT_UP, INPUT_RIGHT};
@@ -204,7 +202,7 @@ static u8 Stage_HitNote(PlayerState *this, u8 type, fixed_t offset)
 	//accuracy stuff
 	this->min_accuracy += 100;
 
-	this->max_accuracy += 100 + (hit_type*30);
+	this->max_accuracy += 100 + (hit_type*25);
 
 	this->refresh_accuracy = true;
 	
@@ -243,12 +241,6 @@ static u8 Stage_HitNote(PlayerState *this, u8 type, fixed_t offset)
 
 static void Stage_MissNote(PlayerState *this)
 {
-	this->max_accuracy += 100;
-	this->refresh_accuracy = true;
-
-	this->miss++;
-	this->refresh_miss = true;
-
 	if (this->combo)
 	{
 		//Kill combo
@@ -266,6 +258,12 @@ static void Stage_MissNote(PlayerState *this)
 		if (combo != NULL)
 			ObjectList_Add(&stage.objlist_fg, (Object*)combo);
 	}
+
+	this->max_accuracy += 100;
+	this->refresh_accuracy = true;
+
+	this->miss++;
+	this->refresh_miss = true;
 }
 
 static void Stage_NoteCheck(PlayerState *this, u8 type)
@@ -542,49 +540,55 @@ void Stage_BlendTexArb(Gfx_Tex *tex, const RECT *src, const POINT_FIXED *p0, con
 
 static void Stage_TimerGetLength(void)
 {
-	const XA_TrackDef *track_def = &xa_tracks[stage.stage_def->music_track]; //get length of the music
-	stage.timerlength = (track_def->length / 75 / IO_SECT_SIZE) - 1; //convert in seconds
+	const XA_TrackDef *track_def = &xa_tracks[stage.stage_def->music_track]; //Get length of the music
+	stage.timer.length = XA_MINUTES(track_def->length); //convert in seconds - 1
 
 	(void)xa_paths; //just for remove boring warning
 
-	//get minutes
-	stage.timermin = stage.timerlength / 60;
+	//Get Minutes
+	stage.timer.min = stage.timer.length / 60;
 
-	//get seconds
-	stage.timersec = stage.timerlength % 60;
+	//Get Seconds
+	stage.timer.sec = stage.timer.length % 60;
 
-	stage.timepassed = 0;
+	//Reset Stuff
+	stage.timer.passed = stage.timer.increment = 0; 
 }
 
 static void Stage_TimerTick(void)
-{
+{	
 	if (stage.song_step >= 0)
 	{
-		//increasing variable until timer reach 0:00
-		if (stage.timepassed < stage.timerlength * 60)
-			stage.timepassed += timer_dt/12;
-
-		if ((stage.timepassed % 60) == 59) //everytime dat variable be a multiple of 59, remove 1 second
+		//increasing variables until timer reach 0:00
+		if (!(stage.flag & STAGE_FLAG_PAUSED))
 		{
-			//seconds checker
-			stage.timersec--;
-
-			if (stage.timersec < 0)
-				stage.timersec += 60;
-
-			//minutes checker
-			if (stage.timersec >= 59) //everytime seconds be more or equal 59, remove 1 minute
-				stage.timermin--;
+			if (stage.timer.passed != stage.timer.length)
+			{
+				stage.timer.increment += timer_dt/12;
+				stage.timer.passed = stage.timer.increment / 60;
+			}
 		}
 	}
+
+		//seconds and minutes stuff
+		stage.timer.sec -= (stage.timer.increment % 60) == 59;
+
+		if (stage.timer.sec < 0)
+		{
+			stage.timer.min--;
+			stage.timer.sec = 59;
+		}
+	
 		
-	//don't draw timer if "show timer" option not be enable
 	if (stage.showtimer)
 	{
 		char text[0x80];
 
-		//format string
-		sprintf(text, "%d : %s%d", stage.timermin, (stage.timersec > 9) ? '\0' :"0", stage.timersec); //making this for avoid cases like 1:4
+		if (stage.timer.sec < 10) //making this for avoid cases like 1:4
+			sprintf(text, "%d : 0%d", stage.timer.min, stage.timer.sec); 
+
+		else
+			sprintf(text, "%d : %d", stage.timer.min, stage.timer.sec); 
 
 		//Draw text
 		stage.font_cdr.draw(&stage.font_cdr,
@@ -595,18 +599,18 @@ static void Stage_TimerTick(void)
 	);
 
 		//draw square length
-		RECT square_black = {0, 250, 111, 4};
-		RECT square_fill = {0, 250, (110 * (stage.timepassed) / (stage.timerlength * 60)), 4};
+		RECT square_fill = {0, 249, (110 * (stage.timer.passed) / (stage.timer.length)), 5};
+		RECT square_black = {0, 249, 111, 5};
 
 		RECT_FIXED square_dst = {
 		FIXED_DEC(-56,1),
-		FIXED_DEC(-110,1),
+		FIXED_DEC(-109,1),
 		0,
-		FIXED_DEC(7,1)
+		FIXED_DEC(5,1)
 	};
 
 		if (stage.downscroll)
-			square_dst.y = -square_dst.y - square_dst.h + FIXED_DEC(1,1);
+			square_dst.y = -square_dst.y - square_dst.h;
 
 		square_dst.w = square_fill.w << FIXED_SHIFT;
 		Stage_DrawTex(&stage.tex_hud1, &square_fill, &square_dst, stage.bump);
@@ -663,9 +667,9 @@ static void Stage_DrawHealthBar(s16 x, s32 color)
 	//Get src and dst
 	RECT src = {
 		0,
-	  250,
+	  249,
 		x,
-		4
+		5
 	};
 	RECT_FIXED dst = {
 		FIXED_DEC(-100,1),
@@ -948,13 +952,12 @@ static void Stage_LoadSFX(void)
 //Stage Intro Function
 static void Stage_PlayIntro(void)
 {
-	s16 intro_step = -stage.song_step;
-	s8 intro_cut = 4 - (intro_step / 5); //making this for be more readable
+	s8 intro = 2 - (-stage.song_step / 5); //making this for be more readable
 
 	//get src and dst of intro
 	RECT intro_src = {
-	((intro_cut - 2) % 2) * 120,
-	((intro_cut - 2) / 2) * 50,
+	(intro % 2) * 120,
+	(intro / 2) * 50,
 	120,
 	50
 };
@@ -965,13 +968,14 @@ static void Stage_PlayIntro(void)
 	FIXED_DEC(intro_src.h * 2,1),
 };
 
-	if (intro_step <= 20)
+	if (stage.song_step >= -20)
 	{
-		if (intro_step < 15)
+		if (stage.song_step > -15)
 			Stage_DrawTex(&stage.tex_hud2, &intro_src, &intro_dst, stage.bump); //draw intro
 
-		if (stage.flag & STAGE_FLAG_JUST_STEP && (intro_step % 0x5) == 0)
-			Audio_PlaySFX(stage.sounds[intro_cut], 0x3fff); //play intro's sounds
+		if (stage.flag & STAGE_FLAG_JUST_STEP && (-stage.song_step % 0x5) == 0)
+			//adding +2 for play the correct sound
+			Audio_PlaySFX(stage.sounds[intro + 2], 0x3fff); //play intro's sounds
 	}
 }
 
@@ -979,7 +983,7 @@ static void Stage_PlayIntro(void)
 //Stage loads
 static void Stage_LoadNotePos(void)
 {
- //load note position
+ //Initialize note position
 
 	//Middle Note x
 	if(stage.middlescroll)
@@ -1322,6 +1326,91 @@ static boolean Stage_NextLoad(void)
 	}
 }
 
+//Pause variables
+static u8 pause_select = 0;
+static fixed_t pause_scroll = -1;
+	
+//When You Paused The Game
+static void Stage_Paused(void)
+{
+	static const char *stage_options[] = {
+				"RESUME",
+				"RESTART SONG",
+				"EXIT TO MENU"
+			};
+
+	//Select option if cross or start is pressed
+	if (pad_state.press & (PAD_CROSS | PAD_START))
+	{
+		switch (pause_select)
+		{
+			case 0: //Resume
+				stage.flag &= ~STAGE_FLAG_PAUSED;
+				Audio_ResumeXA();
+				break;
+			case 1: //Retry
+				stage.trans = StageTrans_Reload;
+				Trans_Start();
+				break;
+			case 2: //Quit
+				stage.trans = StageTrans_Menu;
+				Trans_Start();
+				break;
+		}
+	}
+
+	//Change option
+	if (pad_state.press & PAD_UP)
+	{
+		if (pause_select > 0)
+				pause_select--;
+		else
+				pause_select = COUNT_OF(stage_options) - 1;
+	}
+	if (pad_state.press & PAD_DOWN)
+	{
+		if (pause_select < COUNT_OF(stage_options) - 1)
+			pause_select++;
+		else
+			pause_select = 0;
+	}
+				
+
+	//draw options
+	if (pause_scroll == -1)
+			pause_scroll = COUNT_OF(stage_options) * FIXED_DEC(33,1);
+
+	//Draw options
+	s32 next_scroll = pause_select * FIXED_DEC(33,1);
+	pause_scroll += (next_scroll - pause_scroll) >> 3;
+
+	for (u8 i = 0; i < COUNT_OF(stage_options); i++)
+	{
+		//Get position on screen
+		s32 y = (i * 33) - 8 - (pause_scroll >> FIXED_SHIFT);
+		if (y <= -SCREEN_HEIGHT2 - 8)
+			continue;
+		if (y >= SCREEN_HEIGHT2 + 8)
+			break;
+				
+		//Draw text
+		stage.font_bold.draw_col(&stage.font_bold,
+		stage_options[i],
+	  20 + (y >> 2),
+		y + 120,
+		FontAlign_Left,
+		//if the option is the one you are selecting, draw in normal color, else, draw gray
+		(i == pause_select) ? 0x80 : 160 >> 1,
+		(i == pause_select) ? 0x80 : 160 >> 1,
+		(i == pause_select) ? 0x80 : 160 >> 1
+		);
+	}
+	//pog blend
+	RECT screen_src = {0, 0 ,SCREEN_WIDTH, SCREEN_HEIGHT};
+
+	Gfx_BlendRect(&screen_src, 70, 70, 70, 0);
+}
+
 void Stage_Tick(void)
 {
 	SeamLoad:;
@@ -1333,7 +1422,6 @@ void Stage_Tick(void)
 		{
 			//Don't do a shit
 			case StageState_Play:
-			case StageState_Pause:
 			break;
 
 			//Reset Song
@@ -1346,8 +1434,7 @@ void Stage_Tick(void)
 	
 	if (Trans_Tick())
 	{
-		//reset selector
-		stage.select = 0;
+		pause_select = 0;
 
 		switch (stage.trans)
 		{
@@ -1388,7 +1475,7 @@ void Stage_Tick(void)
 		case StageState_Play:
 		{
 			//Clear per-frame flags
-			stage.flag &= ~(STAGE_FLAG_JUST_STEP | STAGE_FLAG_SCORE_REFRESH);
+			stage.flag &= ~(STAGE_FLAG_JUST_STEP);
 
 			//Step
 			//FntPrint("Step is: %d", stage.song_step);
@@ -1398,94 +1485,97 @@ void Stage_Tick(void)
 			fixed_t next_scroll;
 			
 				const fixed_t interp_int = FIXED_UNIT * 8 / 75;
-				if (stage.note_scroll < 0)
-				{
-					stage.song_time += timer_dt;
-					
-					//Update song
-					if (stage.song_time >= 0)
+
+			if (!(stage.flag & STAGE_FLAG_PAUSED))
+			{
+					if (stage.note_scroll < 0)
 					{
-						//Song has started
-						playing = true;
-						Audio_PlayXA_Track(stage.stage_def->music_track, 0x40, stage.stage_def->music_channel, 0);
+						stage.song_time += timer_dt;
 						
-						//Update song time
-						fixed_t audio_time = (fixed_t)Audio_TellXA_Milli() - stage.offset;
-						if (audio_time < 0)
-							audio_time = 0;
-						stage.interp_ms = (audio_time << FIXED_SHIFT) / 1000;
-						stage.interp_time = 0;
-						stage.song_time = stage.interp_ms;
-					}
-					else
-					{
-						//Still scrolling
-						playing = false;
-					}
-					
-					//Update scroll
-					next_scroll = FIXED_MUL(stage.song_time, stage.step_crochet);
-				}
-				else if (Audio_PlayingXA())
-				{
-					fixed_t audio_time_pof = (fixed_t)Audio_TellXA_Milli();
-					fixed_t audio_time = (audio_time_pof > 0) ? (audio_time_pof - stage.offset) : 0;
-					
-						//Get playing song position
-						if (audio_time_pof > 0)
+						//Update song
+						if (stage.song_time >= 0)
 						{
-							stage.song_time += timer_dt;
-							stage.interp_time += timer_dt;
-						}
-						
-						if (stage.interp_time >= interp_int)
-						{
-							//Update interp state
-							while (stage.interp_time >= interp_int)
-								stage.interp_time -= interp_int;
+							//Song has started
+							playing = true;
+							Audio_PlayXA_Track(stage.stage_def->music_track, 0x40, stage.stage_def->music_channel, 0);
+							
+							//Update song time
+							fixed_t audio_time = (fixed_t)Audio_TellXA_Milli() - stage.offset;
+							if (audio_time < 0)
+								audio_time = 0;
 							stage.interp_ms = (audio_time << FIXED_SHIFT) / 1000;
-						}
-						
-						//Resync
-						fixed_t next_time = stage.interp_ms + stage.interp_time;
-						if (stage.song_time >= next_time + FIXED_DEC(25,1000) || stage.song_time <= next_time - FIXED_DEC(25,1000))
-						{
-							stage.song_time = next_time;
+							stage.interp_time = 0;
+							stage.song_time = stage.interp_ms;
 						}
 						else
 						{
-							if (stage.song_time < next_time - FIXED_DEC(1,1000))
-								stage.song_time += FIXED_DEC(1,1000);
-							if (stage.song_time > next_time + FIXED_DEC(1,1000))
-								stage.song_time -= FIXED_DEC(1,1000);
+							//Still scrolling
+							playing = false;
 						}
-					
-					playing = true;
-					
-					//Update scroll
-					next_scroll = ((fixed_t)stage.step_base << FIXED_SHIFT) + FIXED_MUL(stage.song_time - stage.time_base, stage.step_crochet);
-				}
-				else
-				{
-					//Song has ended
-					playing = false;
-					stage.song_time += timer_dt;
-					
-					//Update scroll
-					next_scroll = ((fixed_t)stage.step_base << FIXED_SHIFT) + FIXED_MUL(stage.song_time - stage.time_base, stage.step_crochet);
-					
-					//Transition to menu or next song
-					if (stage.story && stage.stage_def->next_stage != stage.stage_id)
+						
+						//Update scroll
+						next_scroll = FIXED_MUL(stage.song_time, stage.step_crochet);
+					}
+					else if (Audio_PlayingXA())
 					{
-						if (Stage_NextLoad())
-							goto SeamLoad;
+						fixed_t audio_time_pof = (fixed_t)Audio_TellXA_Milli();
+						fixed_t audio_time = (audio_time_pof > 0) ? (audio_time_pof - stage.offset) : 0;
+						
+							//Get playing song position
+							if (audio_time_pof > 0)
+							{
+								stage.song_time += timer_dt;
+								stage.interp_time += timer_dt;
+							}
+							
+							if (stage.interp_time >= interp_int)
+							{
+								//Update interp state
+								while (stage.interp_time >= interp_int)
+									stage.interp_time -= interp_int;
+								stage.interp_ms = (audio_time << FIXED_SHIFT) / 1000;
+							}
+							
+							//Resync
+							fixed_t next_time = stage.interp_ms + stage.interp_time;
+							if (stage.song_time >= next_time + FIXED_DEC(25,1000) || stage.song_time <= next_time - FIXED_DEC(25,1000))
+							{
+								stage.song_time = next_time;
+							}
+							else
+							{
+								if (stage.song_time < next_time - FIXED_DEC(1,1000))
+									stage.song_time += FIXED_DEC(1,1000);
+								if (stage.song_time > next_time + FIXED_DEC(1,1000))
+									stage.song_time -= FIXED_DEC(1,1000);
+							}
+						
+						playing = true;
+						
+						//Update scroll
+						next_scroll = ((fixed_t)stage.step_base << FIXED_SHIFT) + FIXED_MUL(stage.song_time - stage.time_base, stage.step_crochet);
 					}
 					else
 					{
-						stage.trans = StageTrans_Menu;
-						Trans_Start();
+						//Song has ended
+						playing = false;
+						stage.song_time += timer_dt;
+						
+						//Update scroll
+						next_scroll = ((fixed_t)stage.step_base << FIXED_SHIFT) + FIXED_MUL(stage.song_time - stage.time_base, stage.step_crochet);
+						
+						//Transition to menu or next song
+						if (stage.story && stage.stage_def->next_stage != stage.stage_id)
+						{
+							if (Stage_NextLoad())
+								goto SeamLoad;
+						}
+						else
+						{
+							stage.trans = StageTrans_Menu;
+							Trans_Start();
+						}
 					}
-				}
 			
 			RecalcScroll:;
 			//Update song scroll and step
@@ -1520,14 +1610,23 @@ void Stage_Tick(void)
 					goto RecalcScroll;
 				}
 			}
+		}
 
 			//intro sequence
 			if (stage.song_step < 0)
 			Stage_PlayIntro();
 
+			if (stage.flag & STAGE_FLAG_PAUSED)
+				Stage_Paused();
+
 			//Go to pause state
 			if (playing && pad_state.press & PAD_START)
-				stage.state = StageState_Pause;
+			{
+				Audio_PauseXA();
+				stage.flag |= STAGE_FLAG_PAUSED;
+				pause_scroll = -1;
+				pause_select = 0;
+			}
 
 			
 			//Handle bump
@@ -1716,12 +1815,12 @@ void Stage_Tick(void)
 			//Draw BotPlay
 			if (stage.botplay)
 			{
-				RECT botplay_src = {3, 235, 67, 16};
+				RECT botplay_src = {5, 236, 58, 12};
 				RECT_FIXED botplay_dst = {
-					FIXED_DEC(-33,1), 
+					FIXED_DEC(-32,1), 
 					FIXED_DEC(-60,1), 
-					FIXED_DEC(67,1), 
-					FIXED_DEC(16,1)
+					FIXED_DEC(58,1), 
+					FIXED_DEC(12,1)
 				};
 
 				Stage_DrawTex(&stage.tex_hud2, &botplay_src, &botplay_dst, stage.bump);
@@ -1863,76 +1962,7 @@ void Stage_Tick(void)
 			stage.player->tick(stage.player);
 			break;
 		}
-
-		//pause state
-		case StageState_Pause:
-		{
-			//Stop Music
-			Audio_StopXA();
-			//Change background colour to black
-			Gfx_SetClear(0, 0, 0);
-
-			static const char *stage_options[] = {
-				"RESTART SONG",
-				"QUIT TO MENU"
-			};
-
-				//Select option if cross or start is pressed
-				if (pad_state.press & (PAD_CROSS | PAD_START))
-				{
-					switch (stage.select)
-					{
-						case 0: //Retry
-							stage.trans = StageTrans_Reload;
-							Trans_Start();
-							break;
-						case 1: //Quit
-							stage.trans = StageTrans_Menu;
-							Trans_Start();
-							break;
-					}
-				}
-
-				//Change option
-				if (pad_state.press & PAD_UP)
-				{
-					if (stage.select > 0)
-						stage.select--;
-					else
-						stage.select = COUNT_OF(stage_options) - 1;
-				}
-				if (pad_state.press & PAD_DOWN)
-				{
-					if (stage.select < COUNT_OF(stage_options) - 1)
-						stage.select++;
-					else
-						stage.select = 0;
-				}
-				
-
-			//draw options
-			for (u8 i = 0; i < COUNT_OF(stage_options); i++)
-			{
-				//Get position on screen
-				s32 y = (i * 28) - 8;
-				if (y <= -SCREEN_WIDTH2 - 8)
-					continue;
-				if (y >= SCREEN_WIDTH2 + 8)
-					break;
-				
-				//Draw text
-				stage.font_bold.draw_col(&stage.font_bold,
-					stage_options[i],
-				    40,
-					80 + y,
-					FontAlign_Left,
-					//if the option is the one you are selecting, draw in normal color, else, draw gray
-					(i == stage.select) ? 0x80 : 160 >> 1,
-					(i == stage.select) ? 0x80 : 160 >> 1,
-					(i == stage.select) ? 0x80 : 160 >> 1
-				);
-			}
+		default:
 			break;
-		}
 	}
 }

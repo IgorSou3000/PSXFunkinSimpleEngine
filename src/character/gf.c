@@ -171,17 +171,13 @@ void Char_GF_Tick(Character *character)
 			Speaker_Bump(&this->speaker);
 		}
 	}
-	
-	//Get parallax
-	fixed_t parallax;
-	parallax = FIXED_UNIT;
-	
+
 	//Animate and draw
 	Animatable_Animate(&character->animatable, (void*)this, Char_GF_SetFrame);
-	Character_DrawParallax(character, &this->tex, &char_gf_frame[this->frame], parallax);
+	Character_Draw(character, &this->tex, &char_gf_frame[this->frame]);
 	
 	//Tick speakers
-	Speaker_Tick(&this->speaker, character->x, character->y, parallax);
+	Speaker_Tick(&this->speaker, character->x, character->y);
 }
 
 void Char_GF_SetAnim(Character *character, u8 anim)
@@ -234,7 +230,7 @@ Character *Char_GF_New(fixed_t x, fixed_t y)
 	
 	this->character.focus_x = FIXED_DEC(2,1);
 	this->character.focus_y = FIXED_DEC(-40,1);
-	this->character.focus_zoom = FIXED_DEC(15,10);
+	this->character.focus_zoom = FIXED_DEC(2,1);
 	
 	//Load art
 	this->arc_main = IO_Read("\\CHAR\\GF.ARC;1");

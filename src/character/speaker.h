@@ -21,6 +21,6 @@ typedef struct
 //Speaker functions
 void Speaker_Init(Speaker *this);
 void Speaker_Bump(Speaker *this);
-void Speaker_Tick(Speaker *this, fixed_t x, fixed_t y, fixed_t parallax);
+void Speaker_Tick(Speaker *this, fixed_t x, fixed_t y);
 
 #endif

@@ -41,6 +41,7 @@ void Audio_Quit(void);
 void Audio_PlayXA_Track(XA_Track track, u8 volume, u8 channel, boolean loop);
 void Audio_SeekXA_Track(XA_Track track);
 void Audio_PauseXA(void);
+void Audio_ResumeXA(void);
 void Audio_StopXA(void);
 void Audio_ChannelXA(u8 channel);
 s32 Audio_TellXA_Sector(void);

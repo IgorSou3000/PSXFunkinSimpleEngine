@@ -25,7 +25,7 @@
 
 #define STAGE_FLAG_JUST_STEP     (1 << 0) //Song just stepped this frame
 #define STAGE_FLAG_VOCAL_ACTIVE  (1 << 1) //Song's vocal track is currently active
-#define STAGE_FLAG_SCORE_REFRESH (1 << 2) //Score text should be refreshed
+#define STAGE_FLAG_PAUSED (1 << 2) //Game Is Paused
 
 #define STAGE_LOAD_PLAYER     (1 << 0) //Reload player character
 #define STAGE_LOAD_OPPONENT   (1 << 1) //Reload opponent character
@@ -154,8 +154,6 @@ typedef struct
 	//HUD textures
 	Gfx_Tex tex_hud0, tex_hud1, tex_hud2;
 
-	u8 select;
-
 	//Font
 	FontData font_cdr, font_bold;
 	
@@ -180,11 +178,15 @@ typedef struct
 	fixed_t note_x[8];
 	fixed_t note_y[8];
 
-	//Timer
-	s32 timerlength; //length of the song
-	s8 timermin; //minutes of the song
-	s8 timersec; //seconds of the song
-	s32 timepassed; //how much time it passed
+	//Song Timer
+	struct
+	{
+	u16 length; //length of the song
+	s8  min; //minutes of the song
+	s8  sec; //seconds of the song
+	s32 increment; //increment stuff
+	u16 passed; //how much time it passed in seconds
+	} timer;
 	
 	//Stage state
 	boolean story;
@@ -230,7 +232,6 @@ typedef struct
 		StageState_DeadLoad,   //Wait for said data to be read
 		StageState_DeadDrop,   //Mic drop
 		StageState_DeadRetry,  //Retry prompt
-		StageState_Pause //Game is paused
 	} state;
 	
 	u8 note_swap;

@@ -1,4 +1,5 @@
 #define XA_LENGTH(x) (((u64)(x) * 75) / 100 * IO_SECT_SIZE) //Centiseconds to sectors in bytes (w)
+#define XA_MINUTES(x)(((u64)(x) / 75) / IO_SECT_SIZE) - 1; //Convert XA_LENGTH in seconds - 1
 
 typedef struct
 {
@@ -12,7 +13,7 @@ static const XA_TrackDef xa_tracks[] = {
 	{XA_Menu, XA_LENGTH(400)},  //XA_MicDrop
 	{XA_Menu, XA_LENGTH(3800)},  //XA_GameOver
 	//WEEK1A.XA
-	{XA_Week1A, XA_LENGTH(7700)}, //XA_Bopeebo
+	{XA_Week1A, XA_LENGTH(7600)}, //XA_Bopeebo
 	{XA_Week1A, XA_LENGTH(8000)}, //XA_Fresh
 	//WEEK1B.XA
 	{XA_Week1B, XA_LENGTH(8700)}, //XA_Dadbattle
