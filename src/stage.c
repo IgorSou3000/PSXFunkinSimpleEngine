@@ -988,13 +988,14 @@ static void Stage_LoadNotePos(void)
 	//Middle Note x
 	if(stage.middlescroll)
 	{
-		//bf
+		//bf or opponent if be swap mode
 		stage.note_x[0 ^ stage.note_swap] = FIXED_DEC(-52,1);
 		stage.note_x[1 ^ stage.note_swap] = FIXED_DEC(-18,1); //+34
 		stage.note_x[2 ^ stage.note_swap] = FIXED_DEC(16,1);
 		stage.note_x[3 ^ stage.note_swap] = FIXED_DEC(50,1);
-		//opponent
-	    stage.note_x[4 ^ stage.note_swap] = stage.note_x[5 ^ stage.note_swap] = stage.note_x[6 ^ stage.note_swap] = stage.note_x[7 ^ stage.note_swap] = FIXED_DEC(-500,1);
+		//opponent or bf if be swap mode
+		for (u8 i= 0; i < 8; i++)
+	  	stage.note_x[i ^ stage.note_swap] = FIXED_DEC(500,1); // i am just put notes out of screen
 	}
 	//Normal Note x
 	else
@@ -1250,6 +1251,8 @@ void Stage_Unload(void)
 	ObjectList_Free(&stage.objlist_splash);
 	ObjectList_Free(&stage.objlist_fg);
 	ObjectList_Free(&stage.objlist_bg);
+
+	stage.flag = NULL;
 	
 	//Free characters
 	Character_Free(stage.player);
@@ -1416,19 +1419,23 @@ void Stage_Tick(void)
 	SeamLoad:;
 	
 	//Tick transition
-	if (pad_state.press & PAD_START)
-	{
-		switch (stage.state)
-		{
-			//Don't do a shit
-			case StageState_Play:
-			break;
 
-			//Reset Song
-			default:
-				stage.trans = StageTrans_Reload;
+	//Retry Song
+	if (pad_state.press & (PAD_CROSS | PAD_START))
+	{
+		if (stage.state != StageState_Play && stage.player->animatable.anim > PlayerAnim_Dead2)
+		{
+			stage.player->animatable.anim = PlayerAnim_Dead6;
+			stage.state = StageState_DeadDecide;
+		}
+	}
+	//Back To Menu
+	else if (pad_state.press & (PAD_CIRCLE))
+	{
+		if (stage.state != StageState_Play)
+		{
+				stage.trans = StageTrans_Menu;
 				Trans_Start();
-			break;
 		}
 	}
 	
@@ -1877,7 +1884,7 @@ void Stage_Tick(void)
 		case StageState_Dead: //Start BREAK animation
 		{
 			//Start drop mic immediately
-			Audio_PlayXA_Track(XA_Micdrop, 0x40, 1, true);
+			Audio_PlayXA_Track(XA_Micdrop, 0x40, 1, false);
 			
 			//Unload stage data
 			Mem_Free(stage.chart_data);
@@ -1905,7 +1912,8 @@ void Stage_Tick(void)
 			Gfx_SetClear(0, 0, 0);
 			
 			//Run death animation, focus on player, and change state
-			stage.player->set_anim(stage.player, PlayerAnim_Dead0);
+			if (stage.player->animatable.anim != PlayerAnim_Dead6)
+				stage.player->set_anim(stage.player, PlayerAnim_Dead0);
 			
 			Stage_FocusCharacter(stage.player, 0);
 			stage.song_time = 0;
@@ -1926,8 +1934,9 @@ void Stage_Tick(void)
 			//Drop mic and change state if animation has ended
 			if (stage.player->animatable.anim != PlayerAnim_Dead1)
 				break;
-			
-			stage.player->set_anim(stage.player, PlayerAnim_Dead2);
+
+			if (stage.player->animatable.anim != PlayerAnim_Dead6)
+				stage.player->set_anim(stage.player, PlayerAnim_Dead2);
 			stage.camera.td = FIXED_DEC(25, 1000);
 			stage.state = StageState_DeadDrop;
 			break;
@@ -1949,7 +1958,7 @@ void Stage_Tick(void)
 		case StageState_DeadRetry:
 		{
 			//Randomly twitch
-			if (stage.player->animatable.anim == PlayerAnim_Dead3)
+			if (stage.player->animatable.anim == PlayerAnim_Dead3 && stage.player->animatable.anim != PlayerAnim_Dead6)
 			{
 				if (RandomRange(0, 29) == 0)
 					stage.player->set_anim(stage.player, PlayerAnim_Dead4);
@@ -1960,6 +1969,20 @@ void Stage_Tick(void)
 			//Scroll camera and tick player
 			Stage_ScrollCamera();
 			stage.player->tick(stage.player);
+			break;
+		}
+		case StageState_DeadDecide:
+		{
+			//Scroll camera and tick player
+			Stage_ScrollCamera();
+			stage.player->tick(stage.player);
+
+			//Restart
+			if (stage.player->animatable.anim == PlayerAnim_Dead7)
+			{
+				stage.trans = StageTrans_Reload;
+				Trans_Start();
+			}
 			break;
 		}
 		default:

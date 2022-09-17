@@ -66,7 +66,7 @@ typedef struct
 	Gfx_Tex tex, tex_retry;
 	u8 frame, tex_id;
 	
-	u8 retry_bump;
+	s16 retry_bump;
 	
 	SkullFragment skull[COUNT_OF(char_bf_skull)];
 	u8 skull_scale;
@@ -155,8 +155,8 @@ static const Animation char_bf_anim[PlayerAnim_Max] = {
 	{3, (const u8[]){36, 37, 35, 35, 35, 35, 35, ASCR_CHGANI, PlayerAnim_Dead3}},             //PlayerAnim_Dead4
 	{3, (const u8[]){38, 39, 35, 35, 35, 35, 35, ASCR_CHGANI, PlayerAnim_Dead3}},             //PlayerAnim_Dead5
 	
-	{10, (const u8[]){35, 35, 35, ASCR_CHGANI, PlayerAnim_Dead7}}, //PlayerAnim_Dead4
-	{ 3, (const u8[]){38, 39, 35, ASCR_REPEAT}},  //PlayerAnim_Dead5
+	{ 2, (const u8[]){35, 35, 35, ASCR_CHGANI, PlayerAnim_Dead6}}, //PlayerAnim_Dead6
+	{ 3, (const u8[]){38, 39, 35, ASCR_REPEAT}},  //PlayerAnim_Dead7
 };
 
 //Boyfriend player functions
@@ -288,19 +288,23 @@ void Char_BF_Tick(Character *character)
 		Stage_DrawTex(&this->tex_retry, &button_src, &button_dst, FIXED_MUL(stage.camera.zoom, stage.bump));
 		
 		//Draw 'RETRY'
-		u8 retry_frame;
+		u8 retry_frame = 0;
 		
-		if (character->animatable.anim == PlayerAnim_Dead6)
+		if (character->animatable.anim >= PlayerAnim_Dead6)
 		{
 			//Selected retry
-			retry_frame = 2 - (this->retry_bump >> 3);
-			if (retry_frame >= 3)
+			if (this->retry_bump != -1)
+				retry_frame = 3 + (this->retry_bump >> 5);
+
+			if (retry_frame != 0)
+				this->retry_bump++;
+
+			if (retry_frame > 5)
+			{
 				retry_frame = 0;
-			if (this->retry_bump & 2)
-				retry_frame += 3;
-			
-			if (++this->retry_bump == 0xFF)
-				this->retry_bump = 0xFD;
+				this->retry_bump = -1;
+				character->animatable.anim = PlayerAnim_Dead7;
+			}
 		}
 		else
 		{

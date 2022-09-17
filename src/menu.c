@@ -28,25 +28,25 @@ static const char *funny_messages[][2] = {
 	{"PSX PORT BY CUCKYDEV", "YOU KNOW IT"},
 	{"PORTED BY CUCKYDEV", "WHAT YOU GONNA DO"},
 	{"FUNKIN", "FOREVER"},
-	{"WHAT THE HELL", "RITZ PSX"},
+	{"ENGINE BY IGORSOU", "CRY ABOUT IT"},
 	{"LIKE PARAPPA", "BUT COOLER"},
-	{"THE JAPI", "EL JAPI"},
-	{"PICO FUNNY", "PICO FUNNY"},
-	{"OPENGL BACKEND", "BY CLOWNACY"},
+	{"IGOR", "SOUP"},
+	{"PICO FUNNY", "IGORSOUP"},
+	{"POTETO", "CAT"},
 	{"CUCKYFNF", "SETTING STANDARDS"},
 	{"lool", "inverted colours"},
 	{"NEVER LOOK AT", "THE ISSUE TRACKER"},
 	{"PSXDEV", "HOMEBREW"},
-	{"ZERO POINT ZERO TWO TWO EIGHT", "ONE FIVE NINE ONE ZERO FIVE"},
+	{"UNSTOPABLE", "EL GATO"},
 	{"DOPE ASS GAME", "PLAYSTATION MAGAZINE"},
 	{"NEWGROUNDS", "FOREVER"},
-	{"NO FPU", "NO PROBLEM"},
+	{"BORA BILL", "LUVA DE PEDREIRO"},
 	{"OK OKAY", "WATCH THIS"},
 	{"ITS MORE MALICIOUS", "THAN ANYTHING"},
 	{"USE A CONTROLLER", "LOL"},
 	{"SNIPING THE KICKSTARTER", "HAHA"},
 	{"SHITS UNOFFICIAL", "NOT A PROBLEM"},
-	{"SYSCLK", "RANDOM SEED"},
+	{"GATO", "EL CAT"},
 	{"THEY DIDNT HIT THE GOAL", "STOP"},
 	{"FCEFUWEFUETWHCFUEZDSLVNSP", "PQRYQWENQWKBVZLZSLDNSVPBM"},
 	{"THE FLOORS ARE", "THREE DIMENSIONAL"},
@@ -57,7 +57,7 @@ static const char *funny_messages[][2] = {
 	{"HAHAHA", "I DONT CARE"},
 	{"GET ME TO STOP", "TRY"},
 	{"FNF MUKBANG GIF", "THATS UNRULY"},
-	{"OPEN SOURCE", "FOREVER"},
+	{"FAIL", "FISH"},
 	{"ITS A PORT", "ITS WORSE"},
 	{"WOW GATO", "WOW GATO"},
 	{"BALLS FISH", "BALLS FISH"},
@@ -372,10 +372,8 @@ void Menu_Tick(void)
 				//Fallthrough
 					case 2:
 					case 1:
-						menu.font_bold.draw(&menu.font_bold, "NINJAMUFFIN",   SCREEN_WIDTH2, SCREEN_HEIGHT2 - 32, FontAlign_Center);
-						menu.font_bold.draw(&menu.font_bold, "PHANTOMARCADE", SCREEN_WIDTH2, SCREEN_HEIGHT2 - 16, FontAlign_Center);
-						menu.font_bold.draw(&menu.font_bold, "KAWAISPRITE",   SCREEN_WIDTH2, SCREEN_HEIGHT2,      FontAlign_Center);
-						menu.font_bold.draw(&menu.font_bold, "EVILSKER",      SCREEN_WIDTH2, SCREEN_HEIGHT2 + 16, FontAlign_Center);
+						menu.font_bold.draw(&menu.font_bold, "IGORSOU",   SCREEN_WIDTH2, SCREEN_HEIGHT2 - 32, FontAlign_Center);
+						menu.font_bold.draw(&menu.font_bold, "SPICYJPEG", SCREEN_WIDTH2, SCREEN_HEIGHT2 - 16, FontAlign_Center);
 						break;
 					
 					case 7:
@@ -384,7 +382,7 @@ void Menu_Tick(void)
 				//Fallthrough
 					case 6:
 					case 5:
-						menu.font_bold.draw(&menu.font_bold, "IN ASSOCIATION", SCREEN_WIDTH2, SCREEN_HEIGHT2 - 64, FontAlign_Center);
+						menu.font_bold.draw(&menu.font_bold, "NOT ASSOCIATED", SCREEN_WIDTH2, SCREEN_HEIGHT2 - 64, FontAlign_Center);
 						menu.font_bold.draw(&menu.font_bold, "WITH",           SCREEN_WIDTH2, SCREEN_HEIGHT2 - 48, FontAlign_Center);
 						break;
 					
@@ -1131,9 +1129,9 @@ void Menu_Tick(void)
 				}
 				menu.font_bold.draw(&menu.font_bold,
 					Menu_LowerIf(text, menu.select != i),
-					48 + (y >> 2),
+					160,
 					SCREEN_HEIGHT2 + y - 8,
-					FontAlign_Left
+					FontAlign_Center
 				);
 			}
 			
