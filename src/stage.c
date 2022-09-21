@@ -21,6 +21,8 @@
 #include "object/combo.h"
 #include "object/splash.h"
 
+#include "events.h"
+
 //Stage constants
 //#define STAGE_FREECAM //Freecam
 
@@ -1062,8 +1064,12 @@ static void Stage_LoadChart(void)
 	u8 *chart_byte = (u8*)stage.chart_data;
 	
 	//Directly use section and notes pointers
-	stage.sections = (Section*)(chart_byte + 6);
+	stage.sections = (Section*)(chart_byte + 8);
+
 	stage.notes = (Note*)(chart_byte + ((u16*)stage.chart_data)[2]);
+
+	//sorry about that lol,but hey it get the correct address
+	stage.events = (Event*)(chart_byte + ((u16*)stage.chart_data)[2] +  ((u16*)stage.chart_data)[3]);
 		
 		for (Note *note = stage.notes; note->pos != 0xFFFF; note++)
 			stage.num_notes++;
@@ -1087,6 +1093,7 @@ static void Stage_LoadChart(void)
 	
 	stage.cur_section = stage.sections;
 	stage.cur_note = stage.notes;
+	stage.cur_event = stage.events;
 	
 	stage.speed = *((fixed_t*)stage.chart_data);
 	
@@ -1197,6 +1204,9 @@ void Stage_Load(StageId id, StageDiff difficulty, boolean story)
 	
 	//Load stage chart
 	Stage_LoadChart();
+
+	//Initialize events
+	Events_Load();
 
 	//Load Fonts
 	FontData_Load(&stage.font_cdr, Font_CDR);
@@ -1322,6 +1332,9 @@ static boolean Stage_NextLoad(void)
 		
 		//Load music
 		Stage_LoadMusic();
+
+		//Initialize events
+		Events_Load();
 		
 		//Reset timer
 		Timer_Reset();
@@ -1661,6 +1674,8 @@ void Stage_Tick(void)
 			else
 				Stage_FocusCharacter(stage.player, FIXED_UNIT / 24);
 			Stage_ScrollCamera();
+
+			Events_StartEvents();
 			
 			switch (stage.mode)
 			{
@@ -1860,6 +1875,8 @@ void Stage_Tick(void)
 			
 			//Tick foreground objects
 			ObjectList_Tick(&stage.objlist_fg);
+
+			Events_FG();
 			
 			//Tick characters
 			stage.player->tick(stage.player);
@@ -1872,6 +1889,8 @@ void Stage_Tick(void)
 			//Tick girlfriend
 			if (stage.gf != NULL)
 				stage.gf->tick(stage.gf);
+
+			Events_BG();
 			
 			//Tick background objects
 			ObjectList_Tick(&stage.objlist_bg);

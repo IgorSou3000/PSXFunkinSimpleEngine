@@ -10,6 +10,7 @@ SRCS = src/main.c \
        src/loadscr.c \
        src/menu.c \
        src/stage.c \
+       src/events.c \
        src/psx.c \
        src/io.c \
        src/gfx.c \

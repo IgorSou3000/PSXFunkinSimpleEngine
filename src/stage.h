@@ -113,11 +113,30 @@ typedef struct
 #define NOTE_FLAG_MINE        (1 << 6) //Note is a mine
 #define NOTE_FLAG_HIT         (1 << 7) //Note has been hit
 
+//EVENTS
+#define EVENTS_FLAG_VARIANT 0xFFFC
+
+#define EVENTS_FLAG_SPEED     (1 << 2) //Change Scroll Speed
+#define EVENTS_FLAG_BLAMMED   (1 << 3) //Blammed Light
+
+#define EVENTS_FLAG_PLAYED    (1 << 15) //Event has been already played
+
 typedef struct
 {
 	u16 pos; //1/12 steps
 	u16 type;
 } Note;
+
+typedef struct
+{
+	//psych engine shit
+	u16 pos; //1/12 steps
+	u16 event;
+	u16 value1;
+	u16 value2;
+} Event;
+
+
 
 typedef struct
 {
@@ -165,6 +184,7 @@ typedef struct
 	IO_Data chart_data;
 	Section *sections;
 	Note *notes;
+	Event* events;
 	size_t num_notes;
 	
 	fixed_t speed;
@@ -209,6 +229,8 @@ typedef struct
 	
 	Section *cur_section; //Current section
 	Note *cur_note; //First visible and hittable note, used for drawing and hit detection
+
+	Event* cur_event; //Current event
 	
 	fixed_t note_scroll, song_time, interp_time, interp_ms, interp_speed;
 	
