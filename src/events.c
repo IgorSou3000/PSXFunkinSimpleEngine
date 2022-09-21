@@ -121,7 +121,6 @@ void Events_StartEvents(void)
 			}
 
 	Events_Tick();
-	FntPrint("speed %d", stage.speed);
 }
 
 //Initialize some stuffs
