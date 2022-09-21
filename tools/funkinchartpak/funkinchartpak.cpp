@@ -222,6 +222,7 @@ int main(int argc, char *argv[])
 					new_event.value1 = std::stof(value1) * FIXED_UNIT;
 
 					new_event.value2 = std::stof(value2) * FIXED_UNIT;
+					std::cout << "founded event!: " << j[0] << std::endl;
 					break;
 				}
 				case EVENTS_FLAG_BLAMMED: //Blammed Light!!
@@ -230,13 +231,12 @@ int main(int argc, char *argv[])
 
 					//useless value lol
 					new_event.value2 = 0;
+					std::cout << "founded event!: " << j[0] << std::endl;
 					break;
 				}
 				default: //nothing lol
 					break;
 			}
-			
-			std::cout << "founded event!: " << j[0] << std::endl;
 
 			events.push_back(new_event);
 		}
