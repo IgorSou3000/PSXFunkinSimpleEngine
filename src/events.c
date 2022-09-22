@@ -32,7 +32,7 @@ void Events_Tick(void)
 	fixed_t ogg = (fixed_t)((colors[events.blammed.value] >> 8) & 0xFF) << FIXED_SHIFT;   // Extract the GG byte
 	fixed_t ogb = (fixed_t)((colors[events.blammed.value]) & 0xFF) << FIXED_SHIFT;        // Extract the BB byte
 
-	if (events.blammed.blackfade > FIXED_DEC(1,1))
+	if (events.blammed.blackfade > 0)
 	{
 		//adding effect
 		if (events.blammed.value != 0)
@@ -64,19 +64,19 @@ void Events_Tick(void)
 	if (events.blammed.blackfade > 0 && events.blammed.blackfade <= FIXED_DEC(255,1))
 	{
 		//Draw black fade
-		if (events.blammed.value != 0)
+		if (events.blammed.value != 0 && events.blammed.blackfade < FIXED_DEC(255,1))
 		 events.blammed.blackfade += FIXED_DEC(timer_dt >> 2,1);
 
 		//back to normal
-		else if (events.blammed.value == 0)
+		else if (events.blammed.value == 0 && events.blammed.blackfade > 0)
 		 events.blammed.blackfade -= FIXED_DEC(timer_dt >> 2,1);
 
 		//avoid bugs
 		if (events.blammed.blackfade > FIXED_DEC(255,1))
 			events.blammed.blackfade = FIXED_DEC(255,1);
 
-		if (events.blammed.blackfade < FIXED_DEC(0,1))
-			events.blammed.blackfade = FIXED_DEC(0,1);
+		if (events.blammed.blackfade < 0)
+			events.blammed.blackfade = 0;
 	}
 }
 
