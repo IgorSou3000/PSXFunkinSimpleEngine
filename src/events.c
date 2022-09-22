@@ -6,6 +6,7 @@
 
 #include "events.h"
 #include "timer.h"
+#include "random.h"
 
  Events events;
 
@@ -106,6 +107,11 @@ void Events_StartEvents(void)
 				case EVENTS_FLAG_BLAMMED: //Blammed Light!!
 				{
 					events.blammed.last_value = events.blammed.value;
+
+					//random shit
+					if ((event->value1 >> FIXED_SHIFT) > 5)
+							event->value1 = RandomRange(1,5);
+
 					events.blammed.value = (event->value1 >> FIXED_SHIFT);
 
 					if (events.blammed.value != 0 && events.blammed.blackfade < FIXED_DEC(70,1))
