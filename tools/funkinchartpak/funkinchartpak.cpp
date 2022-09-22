@@ -1,6 +1,8 @@
 /*
  * funkinchtpak by Regan "CuckyDev" Green
  * Packs Friday Night Funkin' json formatted charts into a binary file for the PSX port
+
+ *Psych Engine Event Reader By IgorSou3000
 */
 
 #include <iostream>
@@ -33,7 +35,8 @@ struct Section
 #define EVENTS_FLAG_VARIANT 0xFFFC
 
 #define EVENTS_FLAG_SPEED     (1 << 2) //Change Scroll Speed
-#define EVENTS_FLAG_BLAMMED     (1 << 3) //Blammed Light
+#define EVENTS_FLAG_BLAMMED   (1 << 3) //Blammed Light
+#define EVENTS_FLAG_GF        (1 << 4) //Set GF Speed
 
 #define EVENTS_FLAG_PLAYED     (1 << 15) //Event has been already played
 
@@ -144,6 +147,10 @@ int main(int argc, char *argv[])
 		{
 			//Push main note
 			Note new_note;
+
+			//invalid type
+			if (j[1] < 0)
+				continue;
 			int sustain = (int)PosRound(j[2], step_crochet) - 1;
 			new_note.pos = (step_base * 12) + PosRound(((double)j[0] - milli_base) * 12.0, step_crochet);
 			new_note.type = (uint8_t)j[1] & (3 | NOTE_FLAG_OPPONENT);
@@ -193,52 +200,56 @@ int main(int argc, char *argv[])
 	});
 
 	//Read Events lol
-	for (auto &i : song_info["events"])
+	for (uint8_t h = 0; h < 2; h++)
 	{
-		Event new_event;
-		new_event.pos = (step_base * 12) + PosRound(((double)i[0] - milli_base) * 12.0, step_crochet);
+		///this is for handle old psych engine versions
+		json info = (h == 0) ? song_info["events"] : song_info["notes"];
 
-		//Read values and the event
-		for (auto &j : i[1])
+		for (auto &i : info)
 		{
-			//Start with 0 for avoid bugs
-			new_event.event = 0;
+			//handle old psych stuff
+			json mode = (h == 0 ) ? i[1] : i["sectionNotes"];
 
-			//get values information
-			std::string value1 =  (j[1] != "") ? j[1] : "0";
-			std::string value2 =  (j[2] != "") ? j[2] : "0";
-
-			if (j[0] == "Change Scroll Speed")
-				new_event.event |= EVENTS_FLAG_SPEED;
-
-			if (j[0] == "Blammed Lights")
-				new_event.event |= EVENTS_FLAG_BLAMMED;
-
-			switch(new_event.event & EVENTS_FLAG_VARIANT)
+			//Read values and the event
+			for (auto &j : mode)
 			{
-				case EVENTS_FLAG_SPEED: //Scroll Speed!!
+				Event new_event;
+
+				//Start with 0 for avoid bugs
+				new_event.event = 0;
+
+				if (h && j[1] >= 0)
+					continue;
+
+				if (h)
+					new_event.pos = (step_base * 12) + PosRound(((double)j[0] - milli_base) * 12.0, step_crochet);
+				else
+					new_event.pos = (step_base * 12) + PosRound(((double)i[0] - milli_base) * 12.0, step_crochet);
+
+				//get values information
+				std::string value1 =  (j[1 + h*2] != "") ? j[1 + h*2] : "0";
+				std::string value2 =  (j[2 + h*2] != "") ? j[2 + h*2] : "0";
+
+				if (j[0 + h*2] == "Change Scroll Speed")
+					new_event.event |= EVENTS_FLAG_SPEED;
+
+				if (j[0 + h*2] == "Blammed Lights")
+					new_event.event |= EVENTS_FLAG_BLAMMED;
+
+				if (j[0 + h*2] == "Set GF Speed")
+					new_event.event |= EVENTS_FLAG_GF;
+
+				if (new_event.event & EVENTS_FLAG_VARIANT)
 				{
-					//fixed values by 1024 to work perfect
+					//fixed values by 1024 to work perfect 
 					new_event.value1 = std::stof(value1) * FIXED_UNIT;
 
 					new_event.value2 = std::stof(value2) * FIXED_UNIT;
-					std::cout << "founded event!: " << j[0] << std::endl;
-					break;
+					std::cout << "founded event!: " << j[0 + h*2] << std::endl;
 				}
-				case EVENTS_FLAG_BLAMMED: //Blammed Light!!
-				{
-					new_event.value1 = std::stof(value1);
 
-					//useless value lol
-					new_event.value2 = 0;
-					std::cout << "founded event!: " << j[0] << std::endl;
-					break;
-				}
-				default: //nothing lol
-					break;
+				events.push_back(new_event);
 			}
-
-			events.push_back(new_event);
 		}
 	}
 
@@ -292,7 +303,7 @@ int main(int argc, char *argv[])
 	for (auto &i : events)
 	{
 		WriteWord(out, i.pos);
-		WriteWord(out,i.event);
+		WriteWord(out, i.event);
 		WriteWord(out,i.value1);
 		WriteWord(out,i.value2);
 	}

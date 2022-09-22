@@ -44,18 +44,18 @@ void Events_Tick(void)
 			}
 	  	else
 	  	{
-			  events.blammed.r += (ogr - events.blammed.r) >> 4;
-			  events.blammed.g += (ogg - events.blammed.g) >> 4;
-			  events.blammed.b += (ogb - events.blammed.b) >> 4;
+			  events.blammed.r += (ogr - events.blammed.r) / timer_dt >> 1;
+			  events.blammed.g += (ogg - events.blammed.g) / timer_dt >> 1;
+			  events.blammed.b += (ogb - events.blammed.b) / timer_dt >> 1;
 			}
 		}
 
 		//removing effect
 		else if (events.blammed.value == 0)
 		{
-		 events.blammed.r += (FIXED_DEC(255,1) - events.blammed.r) >> 4;
-		 events.blammed.g += (FIXED_DEC(255,1) - events.blammed.g) >> 4;
-		 events.blammed.b += (FIXED_DEC(255,1) - events.blammed.b) >> 4;
+		 events.blammed.r += (FIXED_DEC(255,1) - events.blammed.r) / timer_dt >> 1;
+		 events.blammed.g += (FIXED_DEC(255,1) - events.blammed.g) / timer_dt >> 1;
+		 events.blammed.b += (FIXED_DEC(255,1) - events.blammed.b) / timer_dt >> 1;
 		}
 	}
 
@@ -64,11 +64,11 @@ void Events_Tick(void)
 	{
 		//Draw black fade
 		if (events.blammed.value != 0)
-		 events.blammed.blackfade += FIXED_DEC(16,1);
+		 events.blammed.blackfade += FIXED_DEC(timer_dt >> 2,1);
 
 		//back to normal
 		else if (events.blammed.value == 0)
-		 events.blammed.blackfade -= FIXED_DEC(16,1);
+		 events.blammed.blackfade -= FIXED_DEC(timer_dt >> 2,1);
 
 		//avoid bugs
 		if (events.blammed.blackfade > FIXED_DEC(255,1))
@@ -106,10 +106,20 @@ void Events_StartEvents(void)
 				case EVENTS_FLAG_BLAMMED: //Blammed Light!!
 				{
 					events.blammed.last_value = events.blammed.value;
-					events.blammed.value = event->value1;
+					events.blammed.value = (event->value1 >> FIXED_SHIFT);
 
 					if (events.blammed.value != 0 && events.blammed.blackfade < FIXED_DEC(70,1))
 					  events.blammed.blackfade = FIXED_DEC(1,1);
+					break;
+				}
+
+				case EVENTS_FLAG_GF: //Set GF Speed!!
+				{
+					//sooo easy LOL
+					if (event->value1 == 0)
+						stage.gf_speed = 1 << 2;
+					else
+						stage.gf_speed = (event->value1 >> FIXED_SHIFT) << 2;
 					break;
 				}
 

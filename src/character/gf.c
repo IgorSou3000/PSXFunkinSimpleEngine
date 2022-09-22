@@ -131,24 +131,6 @@ void Char_GF_Tick(Character *character)
 						character->set_anim(character, CharAnim_UpAlt);
 					break;
 
-				case StageId_1_2: //Fresh GF bop
-					switch (stage.song_step)
-					{
-						case 16 << 2:
-							stage.gf_speed = 2 << 2;
-							break;
-						case 48 << 2:
-							stage.gf_speed = 1 << 2;
-							break;
-						case 80 << 2:
-							stage.gf_speed = 2 << 2;
-							break;
-						case 112 << 2:
-							stage.gf_speed = 1 << 2;
-							break;
-					}
-					break;
-
 				case StageId_1_4: //Tutorial cheer
 					if (stage.song_step > 64 && stage.song_step < 192 && (stage.song_step & 0x3F) == 60)
 						character->set_anim(character, CharAnim_UpAlt);

@@ -9,6 +9,15 @@
 
 #include "stage.h"
 
+//EVENTS
+#define EVENTS_FLAG_VARIANT 0xFFFC
+
+#define EVENTS_FLAG_SPEED     (1 << 2) //Change Scroll Speed
+#define EVENTS_FLAG_BLAMMED   (1 << 3) //Blammed Light
+#define EVENTS_FLAG_GF        (1 << 4) //Set GF Speed
+
+#define EVENTS_FLAG_PLAYED    (1 << 15) //Event has been already played
+
 //Psych Engine Events Reader By IgorSou3000
 typedef struct
 {
@@ -16,7 +25,7 @@ typedef struct
   struct
   {
     fixed_t ogspd;
-    u16 value1, value2;
+    fixed_t value1, value2;
   }speed;
 
   //BLAMMED LIGHTS

@@ -113,14 +113,6 @@ typedef struct
 #define NOTE_FLAG_MINE        (1 << 6) //Note is a mine
 #define NOTE_FLAG_HIT         (1 << 7) //Note has been hit
 
-//EVENTS
-#define EVENTS_FLAG_VARIANT 0xFFFC
-
-#define EVENTS_FLAG_SPEED     (1 << 2) //Change Scroll Speed
-#define EVENTS_FLAG_BLAMMED   (1 << 3) //Blammed Light
-
-#define EVENTS_FLAG_PLAYED    (1 << 15) //Event has been already played
-
 typedef struct
 {
 	u16 pos; //1/12 steps
