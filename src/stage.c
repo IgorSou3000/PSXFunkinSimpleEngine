@@ -996,7 +996,7 @@ static void Stage_LoadNotePos(void)
 		stage.note_x[2 ^ stage.note_swap] = FIXED_DEC(16,1);
 		stage.note_x[3 ^ stage.note_swap] = FIXED_DEC(50,1);
 		//opponent or bf if be swap mode
-		for (u8 i= 0; i < 8; i++)
+		for (u8 i= 4; i < 8; i++)
 	  	stage.note_x[i ^ stage.note_swap] = FIXED_DEC(500,1); // i am just put notes out of screen
 	}
 	//Normal Note x
